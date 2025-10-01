@@ -22,10 +22,20 @@ jobs:
       uses: actions/setup-node@v3
       with:
         node-version: '20'  # Use Node.js 20
-        cache: 'npm'       # Cache npm dependencies
     
-    # Step 3: Install project dependencies
+    # Step 3: Cache npm dependencies
+    - name: Cache dependencies
+      id: cache
+      uses: actions/cache@v3
+      with:
+        path: ~/.npm
+        key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-npm-
+    
+    # Step 4: Install project dependencies (only if cache miss or package files changed)
     - name: Install dependencies
+      if: steps.cache.outputs.cache-hit != 'true'
       run: npm ci          # Clean install - uses package-lock.json
     
     # Step 4: Run ESLint and auto-fix issues
