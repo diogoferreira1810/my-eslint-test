@@ -1,29 +1,51 @@
+# Name of our workflow
 name: CI
 
+# Define when the workflow should run
 on:
   push:
-    branches: [ main ]
+    branches: [ main ]  # Triggers on pushes to main branch
   pull_request:
-    branches: [ main ]
+    branches: [ main ]  # Triggers on PRs targeting main branch
 
+# Define the jobs to run
 jobs:
-  test:
-    runs-on: ubuntu-latest
+  test:  # Job ID
+    runs-on: ubuntu-latest  # Use Ubuntu as the operating system
 
     steps:
+    # Step 1: Check out the repository code
     - uses: actions/checkout@v4
     
+    # Step 2: Set up Node.js environment
     - name: Set up Node.js
       uses: actions/setup-node@v3
       with:
-        node-version: '20'
-        cache: 'npm'
+        node-version: '20'  # Use Node.js 20
+        cache: 'npm'       # Cache npm dependencies
     
+    # Step 3: Install project dependencies
     - name: Install dependencies
-      run: npm ci
+      run: npm ci          # Clean install - uses package-lock.json
     
-    - name: Run ESLint
-      run: npm run erros
+    # Step 4: Run ESLint and auto-fix issues
+    - name: Run ESLint with auto-fix
+      run: npm run erros -- --fix  # Run ESLint with --fix flag
       
+    # Step 5: If ESLint made any fixes, commit them
+    - name: Commit ESLint fixes
+      if: success()        # Only run if ESLint succeeded
+      run: |
+        # Configure git user for the commit
+        git config --local user.email "github-actions[bot]@users.noreply.github.com"
+        git config --local user.name "github-actions[bot]"
+        # Stage all changes
+        git add -A
+        # Only commit if there are staged changes
+        git diff --staged --quiet || git commit -m "Apply automatic ESLint fixes"
+        # Push the changes
+        git push
+      
+    # Step 6: Run tests
     - name: Run tests
-      run: npm test
+      run: npm test       # Run Jest tests
